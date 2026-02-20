@@ -646,10 +646,47 @@
     });
   }
 
+  // ---- ボタン挿入: 検索候補(typeahead)のユーザー ----
+  function processTypeahead() {
+    const me = getMyScreenName();
+    const items = document.querySelectorAll(
+      '[data-testid="typeaheadRecentSearchesItem"]:not([' + PROCESSED + ']), [data-testid="typeaheadResult"]:not([' + PROCESSED + '])'
+    );
+
+    items.forEach((item) => {
+      if (!item.querySelector('img')) return; // ユーザー項目のみ（検索クエリは除外）
+      item.setAttribute(PROCESSED, '1');
+
+      const screenName = extractScreenName(item);
+      if (!screenName || screenName === me) return;
+
+      // item > div > div(flex/row) > div(textArea) > div(flex/row): [名前] [Xボタン]
+      const container = item.children[0]?.children[0];
+      if (!container) return;
+      const textArea = container.children[1];
+      if (!textArea) return;
+      const row = textArea.children[0];
+      if (!row || row.querySelector('.twblock-btn-container')) return;
+
+      const buttons = createButtons(screenName, null);
+      if (!buttons) return;
+      buttons.classList.add('twblock-typeahead');
+
+      // Xボタン(最後の子)の前に挿入
+      const xBtn = row.querySelector('button');
+      if (xBtn) {
+        row.insertBefore(buttons, xBtn);
+      } else {
+        row.appendChild(buttons);
+      }
+    });
+  }
+
   // ---- メイン処理 ----
   function processAll() {
     processTweets();
     processFollowButtons();
+    processTypeahead();
   }
 
   let debounceTimer = null;

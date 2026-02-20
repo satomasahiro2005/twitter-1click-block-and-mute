@@ -117,6 +117,23 @@
   height: 20px;
 }
 
+/* 検索候補(typeahead): Xボタンの左に配置 */
+.twblock-btn-container.twblock-typeahead {
+  gap: 4px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.twblock-btn-container.twblock-typeahead .twblock-btn {
+  width: 20px;
+  height: 20px;
+}
+
+.twblock-btn-container.twblock-typeahead .twblock-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
 /* サイドバー / フォロー一覧: 32px丸ボタン */
 .twblock-btn-container.twblock-sidebar {
   gap: 4px;
