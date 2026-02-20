@@ -419,14 +419,16 @@
 
     let fallbackRow = null;
     let node = caret.parentElement;
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 8; i++) {
       if (!node || node === tweet) break;
       const cs = getComputedStyle(node);
       if (cs.display === 'flex' && cs.flexDirection === 'row') {
-        const grokBtn = node.querySelector('[aria-label="Grok actions"]');
+        const grokBtn = node.querySelector('[aria-label^="Grok"]');
         if (grokBtn) return { row: node, grokBtn, caret };
-        if (!fallbackRow && node.contains(caret)) {
+        // caretの直近の狭い行(67px)ではなく、アクションバー全体の広い行(>200px)を使う
+        if (node.contains(caret) && node.offsetWidth > 200) {
           fallbackRow = node;
+          break;
         }
       }
       node = node.parentElement;
@@ -464,7 +466,16 @@
             row.insertBefore(buttons, row.firstChild);
           }
         } else {
-          row.insertBefore(buttons, row.firstChild);
+          // caretを含む子要素の直前に挿入（⋯の左側に配置）
+          let caretChild = null;
+          for (const child of row.children) {
+            if (child.contains(grokInfo.caret)) { caretChild = child; break; }
+          }
+          if (caretChild) {
+            row.insertBefore(buttons, caretChild);
+          } else {
+            row.appendChild(buttons);
+          }
         }
       }
 
