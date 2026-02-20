@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const showBlockEl = document.getElementById('show-block');
   const showMuteEl = document.getElementById('show-mute');
+  const confirmBlockFollowingEl = document.getElementById('confirm-block-following');
   const resetStatsBtn = document.getElementById('reset-stats');
   const statBlockedEl = document.getElementById('stat-blocked');
   const statMutedEl = document.getElementById('stat-muted');
@@ -15,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const settings = data.settings || { showBlock: true, showMute: true };
     showBlockEl.checked = settings.showBlock !== false;
     showMuteEl.checked = settings.showMute !== false;
+    confirmBlockFollowingEl.checked = settings.confirmBlockFollowing === true;
 
     const stats = data.stats || { blocked: 0, muted: 0 };
     statBlockedEl.textContent = stats.blocked;
@@ -27,12 +29,14 @@ document.addEventListener('DOMContentLoaded', () => {
       settings: {
         showBlock: showBlockEl.checked,
         showMute: showMuteEl.checked,
+        confirmBlockFollowing: confirmBlockFollowingEl.checked,
       },
     });
   }
 
   showBlockEl.addEventListener('change', saveSettings);
   showMuteEl.addEventListener('change', saveSettings);
+  confirmBlockFollowingEl.addEventListener('change', saveSettings);
 
   // 統計リセット
   resetStatsBtn.addEventListener('click', () => {

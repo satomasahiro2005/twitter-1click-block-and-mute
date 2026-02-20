@@ -146,12 +146,45 @@
     }
   }
 
+  // フォロー状態を確認するAPI
+  async function checkFollowing(screenName) {
+    const headers = getHeaders();
+    if (!headers) {
+      return { following: false };
+    }
+
+    try {
+      const url = 'https://x.com/i/api/1.1/friendships/show.json?source_screen_name=&target_screen_name=' + encodeURIComponent(screenName);
+      const response = await originalFetch(url, {
+        method: 'GET',
+        headers: { ...headers },
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return { following: data.relationship?.source?.following === true };
+      }
+      return { following: false };
+    } catch (err) {
+      return { following: false };
+    }
+  }
+
   // content.jsからのメッセージを受信
   window.addEventListener('message', async (event) => {
     if (event.source !== window) return;
     if (event.data && event.data.type === '__TWBLOCK_ACTION') {
       const { action, screenName, requestId } = event.data;
       const result = await performAction(action, screenName);
+      window.postMessage(
+        { type: '__TWBLOCK_RESULT', requestId, ...result },
+        '*'
+      );
+    }
+    if (event.data && event.data.type === '__TWBLOCK_CHECK_FOLLOWING') {
+      const { screenName, requestId } = event.data;
+      const result = await checkFollowing(screenName);
       window.postMessage(
         { type: '__TWBLOCK_RESULT', requestId, ...result },
         '*'

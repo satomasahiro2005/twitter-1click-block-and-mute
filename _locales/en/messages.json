@@ -39,6 +39,11 @@
   "sectionButtons": { "message": "Button Display" },
   "showBlockButton": { "message": "Show block button" },
   "showMuteButton": { "message": "Show mute button" },
+  "confirmBlockFollowingLabel": { "message": "Confirm before blocking followed users" },
+  "confirmBlockFollowing": {
+    "message": "You are following @$USER$. Block anyway?",
+    "placeholders": { "user": { "content": "$1" } }
+  },
 
   "sectionStats": { "message": "Statistics" },
   "resetStats": { "message": "Reset Statistics" },

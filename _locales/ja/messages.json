@@ -39,6 +39,11 @@
   "sectionButtons": { "message": "ボタン表示" },
   "showBlockButton": { "message": "ブロックボタンを表示" },
   "showMuteButton": { "message": "ミュートボタンを表示" },
+  "confirmBlockFollowingLabel": { "message": "フォロー中のユーザーをブロックする前に確認する" },
+  "confirmBlockFollowing": {
+    "message": "@$USER$ はフォロー中です。ブロックしますか？",
+    "placeholders": { "user": { "content": "$1" } }
+  },
 
   "sectionStats": { "message": "統計" },
   "resetStats": { "message": "統計をリセット" },

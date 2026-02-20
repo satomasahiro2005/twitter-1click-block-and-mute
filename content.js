@@ -25,6 +25,7 @@
   // ---- 設定 ----
   let showBlock = true;
   let showMute = true;
+  let confirmBlockFollowing = false;
 
   // ---- アイコン更新（ストレージ or パッシブ監視） ----
   let iconsExtracted = false;
@@ -50,6 +51,7 @@
         if (data.settings) {
           showBlock = data.settings.showBlock !== false;
           showMute = data.settings.showMute !== false;
+          confirmBlockFollowing = data.settings.confirmBlockFollowing === true;
         }
         resolve();
       });
@@ -190,6 +192,23 @@
           resolve({ success: false, error: 'TIMEOUT', message: msg('errorTimeout') });
         }
       }, 15000);
+    });
+  }
+
+  function checkFollowing(screenName) {
+    return new Promise((resolve) => {
+      const id = '__twb_' + ++reqId;
+      pending.set(id, resolve);
+      window.postMessage(
+        { type: '__TWBLOCK_CHECK_FOLLOWING', screenName, requestId: id },
+        '*'
+      );
+      setTimeout(() => {
+        if (pending.has(id)) {
+          pending.delete(id);
+          resolve({ following: false });
+        }
+      }, 5000);
     });
   }
 
@@ -368,6 +387,19 @@
       btn.classList.add('twblock-loading');
 
       const currentAction = isActive ? undoAction : action;
+
+      // フォロー中ユーザーのブロック確認
+      if (confirmBlockFollowing && action === 'block' && !isActive) {
+        const followResult = await checkFollowing(screenName);
+        if (followResult.following) {
+          btn.classList.remove('twblock-loading');
+          btn.disabled = false;
+          if (!confirm(msg('confirmBlockFollowing', screenName))) return;
+          btn.disabled = true;
+          btn.classList.add('twblock-loading');
+        }
+      }
+
       const result = await sendAction(currentAction, screenName);
       btn.classList.remove('twblock-loading');
 
@@ -709,6 +741,7 @@
       const newSettings = changes.settings.newValue || {};
       showBlock = newSettings.showBlock !== false;
       showMute = newSettings.showMute !== false;
+      confirmBlockFollowing = newSettings.confirmBlockFollowing === true;
       applyButtonVisibility();
     }
     if (changes.icons) {
