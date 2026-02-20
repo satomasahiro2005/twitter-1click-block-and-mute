@@ -1,0 +1,91 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  width: 240px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color-scheme: light dark;
+  background: light-dark(#ffffff, #15202b);
+  color: light-dark(#0f1419, #e7e9ea);
+  padding: 16px;
+}
+
+.popup-header {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.popup-header h1 {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.popup-subtitle {
+  font-size: 12px;
+  color: rgb(113, 118, 123);
+  margin-top: 2px;
+}
+
+.popup-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 12px;
+  background: light-dark(rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.05));
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.stat-count {
+  font-size: 24px;
+  font-weight: 700;
+  color: rgb(29, 155, 240);
+}
+
+.stat-label {
+  font-size: 11px;
+  color: rgb(113, 118, 123);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-divider {
+  width: 1px;
+  height: 32px;
+  background: light-dark(rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.1));
+}
+
+.popup-footer {
+  text-align: center;
+}
+
+.popup-footer p {
+  font-size: 11px;
+  color: rgb(113, 118, 123);
+  line-height: 1.4;
+}
+
+.popup-settings-link {
+  display: block;
+  text-align: center;
+  margin-top: 12px;
+  font-size: 12px;
+  color: rgb(29, 155, 240);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.popup-settings-link:hover {
+  text-decoration: underline;
+}

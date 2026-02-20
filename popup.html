@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-header">
+    <h1>Twitter 1Click Block &amp; Mute</h1>
+  </div>
+  <div class="popup-stats">
+    <div class="stat">
+      <span class="stat-count" id="blocked-count">0</span>
+      <span class="stat-label">Blocked</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat">
+      <span class="stat-count" id="muted-count">0</span>
+      <span class="stat-label">Muted</span>
+    </div>
+  </div>
+  <div class="popup-footer">
+    <p data-i18n="popupDescription"></p>
+    <a class="popup-settings-link" id="open-settings">&#x2699; <span data-i18n="settingsLabel"></span></a>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

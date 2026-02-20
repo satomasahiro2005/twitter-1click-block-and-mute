@@ -1,0 +1,52 @@
+{
+  "extName": {
+    "message": "Twitter 1Click Block & Mute"
+  },
+  "extDescription": {
+    "message": "Twitter でワンクリックでブロック・ミュートできるボタンを追加します"
+  },
+
+  "blockLabel": { "message": "ブロック" },
+  "muteLabel": { "message": "ミュート" },
+  "blockedStatus": { "message": "ブロック済み" },
+  "mutedStatus": { "message": "ミュート済み" },
+  "unblockLabel": { "message": "ブロック解除" },
+  "unmuteLabel": { "message": "ミュート解除" },
+
+  "toastBlocked": {
+    "message": "@$USER$ をブロックしました",
+    "placeholders": { "user": { "content": "$1" } }
+  },
+  "toastMuted": {
+    "message": "@$USER$ をミュートしました",
+    "placeholders": { "user": { "content": "$1" } }
+  },
+  "toastUnblocked": {
+    "message": "@$USER$ のブロックを解除しました",
+    "placeholders": { "user": { "content": "$1" } }
+  },
+  "toastUnmuted": {
+    "message": "@$USER$ のミュートを解除しました",
+    "placeholders": { "user": { "content": "$1" } }
+  },
+
+  "errorTimeout": { "message": "タイムアウトしました" },
+  "errorOccurred": { "message": "エラーが発生しました" },
+
+  "popupDescription": { "message": "ツイートやプロフィールに表示されるボタンでワンクリックブロック＆ミュート" },
+  "settingsLabel": { "message": "設定" },
+
+  "sectionButtons": { "message": "ボタン表示" },
+  "showBlockButton": { "message": "ブロックボタンを表示" },
+  "showMuteButton": { "message": "ミュートボタンを表示" },
+
+  "sectionStats": { "message": "統計" },
+  "resetStats": { "message": "統計をリセット" },
+
+  "sectionReset": { "message": "リセット" },
+  "resetHint": { "message": "統計・アイコン・設定をすべて初期状態に戻します" },
+  "fullReset": { "message": "拡張機能を完全リセット" },
+  "confirmReset": { "message": "すべてのデータ（統計・設定）をリセットしますか？" },
+
+  "supportLabel": { "message": "サポート" }
+}

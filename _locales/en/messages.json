@@ -1,0 +1,52 @@
+{
+  "extName": {
+    "message": "Twitter 1Click Block & Mute"
+  },
+  "extDescription": {
+    "message": "Add one-click block and mute buttons on Twitter"
+  },
+
+  "blockLabel": { "message": "Block" },
+  "muteLabel": { "message": "Mute" },
+  "blockedStatus": { "message": "Blocked" },
+  "mutedStatus": { "message": "Muted" },
+  "unblockLabel": { "message": "Unblock" },
+  "unmuteLabel": { "message": "Unmute" },
+
+  "toastBlocked": {
+    "message": "Blocked @$USER$",
+    "placeholders": { "user": { "content": "$1" } }
+  },
+  "toastMuted": {
+    "message": "Muted @$USER$",
+    "placeholders": { "user": { "content": "$1" } }
+  },
+  "toastUnblocked": {
+    "message": "Unblocked @$USER$",
+    "placeholders": { "user": { "content": "$1" } }
+  },
+  "toastUnmuted": {
+    "message": "Unmuted @$USER$",
+    "placeholders": { "user": { "content": "$1" } }
+  },
+
+  "errorTimeout": { "message": "Timed out" },
+  "errorOccurred": { "message": "An error occurred" },
+
+  "popupDescription": { "message": "One-click block & mute from tweets and profiles" },
+  "settingsLabel": { "message": "Settings" },
+
+  "sectionButtons": { "message": "Button Display" },
+  "showBlockButton": { "message": "Show block button" },
+  "showMuteButton": { "message": "Show mute button" },
+
+  "sectionStats": { "message": "Statistics" },
+  "resetStats": { "message": "Reset Statistics" },
+
+  "sectionReset": { "message": "Reset" },
+  "resetHint": { "message": "Reset all data (statistics, icons, settings) to defaults" },
+  "fullReset": { "message": "Full Reset Extension" },
+  "confirmReset": { "message": "Reset all data (statistics and settings)?" },
+
+  "supportLabel": { "message": "Support" }
+}
