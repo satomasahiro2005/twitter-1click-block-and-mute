@@ -74,6 +74,30 @@
   background-color: rgba(244, 33, 46, 0.1);
 }
 
+/* RT("reposted")行のpadding-top:12pxを上下に分散 */
+.twblock-repost-row .r-ttdzmv {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+/* RT("reposted")行の親をflex-rowに変更して横並びにする */
+.twblock-repost-row {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 4px;
+}
+
+/* RT("reposted")行: テキスト(16px/20px line-height)とアイコンの中心を揃える */
+.twblock-btn-container.twblock-repost {
+  gap: 4px;
+  margin-top: -2px;
+  margin-bottom: -2px;
+}
+
+.twblock-btn-container.twblock-repost .twblock-btn::before {
+  display: none;
+}
+
 /* プロフィール: Followボタンと同じ高さ(36px)の丸ボタン */
 .twblock-btn-container.twblock-profile {
   gap: 8px;

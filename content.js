@@ -436,6 +436,37 @@
     return fallbackRow ? { row: fallbackRow, grokBtn: null, caret } : null;
   }
 
+  // ---- RT: リツイーターと元投稿者を分離抽出 ----
+  function extractRetweetInfo(tweet) {
+    const sc = tweet.querySelector('[data-testid="socialContext"]');
+    if (!sc) return null;
+    const link = sc.closest('a[href]');
+    if (!link) return null;
+    const href = link.getAttribute('href');
+    if (!href || !/^\/[A-Za-z0-9_]{1,15}$/.test(href)) return null;
+    // "reposted"リンクの親flex-row と リンク要素自体
+    let scRow = link.parentElement;
+    for (let i = 0; i < 3; i++) {
+      if (!scRow) break;
+      const cs = getComputedStyle(scRow);
+      if (cs.display === 'flex' && cs.flexDirection === 'row') break;
+      scRow = scRow.parentElement;
+    }
+    // リンクの直接の親(flex-column) — ここをflex-rowにしてボタンを横並びにする
+    const scLinkParent = link.parentElement;
+    return { retweeter: href.substring(1), scRow, scLinkParent };
+  }
+
+  // ツイート本文エリアからscreen_nameを抽出（socialContext内のリンクを除外）
+  function extractAuthorScreenName(tweet) {
+    const userName = tweet.querySelector('[data-testid="User-Name"]');
+    if (userName) {
+      const result = extractScreenName(userName);
+      if (result) return result;
+    }
+    return null;
+  }
+
   // ---- ボタン挿入: タイムラインツイート ----
   function processTweets() {
     const me = getMyScreenName();
@@ -446,13 +477,30 @@
     tweets.forEach((tweet) => {
       tweet.setAttribute(PROCESSED, '1');
 
-      const screenName = extractScreenName(tweet);
-      if (!screenName || screenName === me) return;
+      const rtInfo = extractRetweetInfo(tweet);
+
+      // RT者のボタンを"reposted"行に挿入
+      if (rtInfo && rtInfo.retweeter !== me && rtInfo.scLinkParent) {
+        const rtButtons = createButtons(rtInfo.retweeter, tweet);
+        if (rtButtons) {
+          rtButtons.classList.add('twblock-tweet');
+          rtButtons.classList.add('twblock-repost');
+          rtInfo.scLinkParent.classList.add('twblock-repost-row');
+          rtInfo.scLinkParent.appendChild(rtButtons);
+        }
+      }
+
+      // 元投稿者のボタンをgrok/caret行に挿入
+      const authorName = rtInfo ? extractAuthorScreenName(tweet) : extractScreenName(tweet);
+      if (!authorName || authorName === me) {
+        processQuotedTweet(tweet, me);
+        return;
+      }
 
       const grokInfo = findGrokRow(tweet);
       if (grokInfo) {
         const { row, grokBtn } = grokInfo;
-        const buttons = createButtons(screenName, tweet);
+        const buttons = createButtons(authorName, tweet);
         if (!buttons) return;
         buttons.classList.add('twblock-tweet');
         if (grokBtn) {
