@@ -15,6 +15,10 @@
   const CHECK_ICON =
     '<svg viewBox="0 0 24 24" width="20" height="20"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="currentColor"/></svg>';
 
+  function escapeAttr(s) {
+    return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
   function getIcon(action) {
     return action === 'block' ? BLOCK_ICON : MUTE_ICON;
   }
@@ -80,11 +84,11 @@
       if (!d) continue;
 
       if (!foundBlock && /\bBlock\b|ブロック/.test(text) && !/Unblock|ブロック解除/.test(text)) {
-        BLOCK_ICON = '<svg viewBox="0 0 24 24" width="20" height="20"><path d="' + d + '" fill="currentColor"/></svg>';
+        BLOCK_ICON = '<svg viewBox="0 0 24 24" width="20" height="20"><path d="' + escapeAttr(d) + '" fill="currentColor"/></svg>';
         foundBlock = true;
       }
       if (!foundMute && /\bMute\b|ミュート/.test(text) && !/Unmute|ミュート解除|conversation|会話/.test(text)) {
-        MUTE_ICON = '<svg viewBox="0 0 24 24" width="20" height="20"><path d="' + d + '" fill="currentColor"/></svg>';
+        MUTE_ICON = '<svg viewBox="0 0 24 24" width="20" height="20"><path d="' + escapeAttr(d) + '" fill="currentColor"/></svg>';
         foundMute = true;
       }
     }
