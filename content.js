@@ -579,6 +579,7 @@
           if (!buttons) return;
           buttons.classList.add('twblock-tweet');
           buttons.style.marginLeft = 'auto';
+          buttons.style.paddingLeft = '4px';
           if (grokBtn) {
             let grokChild = null;
             for (const child of row.children) {
