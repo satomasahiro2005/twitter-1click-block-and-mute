@@ -420,12 +420,9 @@
           showToast(msg(action === 'block' ? 'toastBlocked' : 'toastMuted', screenName));
 
           // 引用ツイート内のボタンなら引用部分にバー表示
-          const quotedContainer = btn.closest('.twblock-quoted');
-          if (quotedContainer) {
-            const quotedBlock = quotedContainer.parentElement;
-            if (quotedBlock) {
-              setTimeout(() => hideQuotedTweet(quotedBlock, screenName, action), 300);
-            }
+          const btnContainer = btn.closest('.twblock-btn-container');
+          if (btnContainer && btnContainer._quotedBlock) {
+            setTimeout(() => hideQuotedTweet(btnContainer._quotedBlock, screenName, action), 300);
           } else {
             const parentTweet = btn.closest('article[data-testid="tweet"]');
             if (parentTweet) {
@@ -592,9 +589,34 @@
 
       const buttons = createButtons(qtScreenName, null);
       if (!buttons) return;
-      buttons.classList.add('twblock-quoted');
-      block.style.position = 'relative';
-      block.appendChild(buttons);
+      buttons._quotedBlock = block;
+
+      // User-Nameの親flex-rowを探してインラインに挿入
+      let targetRow = null;
+      let node = userName.parentElement;
+      for (let i = 0; i < 5; i++) {
+        if (!node || node === block) break;
+        const cs = getComputedStyle(node);
+        if (cs.display === 'flex' && cs.flexDirection === 'row') {
+          targetRow = node;
+          break;
+        }
+        node = node.parentElement;
+      }
+      if (!targetRow) return;
+
+      // targetRow〜block間の祖先コンテナを広げて全幅にする
+      let ancestor = targetRow;
+      while (ancestor && ancestor !== block) {
+        ancestor.style.flexGrow = '1';
+        ancestor.style.minWidth = '0';
+        ancestor = ancestor.parentElement;
+      }
+
+      buttons.classList.add('twblock-tweet');
+      buttons.style.marginLeft = 'auto';
+      buttons.style.paddingLeft = '8px';
+      targetRow.appendChild(buttons);
     });
   }
 

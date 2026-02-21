@@ -158,24 +158,6 @@
   margin-right: 8px;
 }
 
-/* 引用ツイート: 右上に絶対配置 */
-.twblock-btn-container.twblock-quoted {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  z-index: 10;
-  gap: 4px;
-}
-
-.twblock-btn-container.twblock-quoted .twblock-btn {
-  width: 20px;
-  height: 20px;
-}
-
-.twblock-btn-container.twblock-quoted .twblock-btn svg {
-  width: 18px;
-  height: 18px;
-}
 
 /* 個別ボタン（デフォルト: 34x34, アイコン20x20） */
 .twblock-btn {
