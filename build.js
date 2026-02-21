@@ -176,11 +176,17 @@ function buildUserscript() {
   const enMessages = JSON.parse(readFile('_locales/en/messages.json'));
   const jaMessages = JSON.parse(readFile('_locales/ja/messages.json'));
 
-  // Build _M object entries
+  // Build _M object entries (resolve $PLACEHOLDER$ → $1 etc.)
   function buildLocaleObj(messages) {
     const map = {};
     for (const [key, val] of Object.entries(messages)) {
-      map[key] = val.message;
+      let msg = val.message;
+      if (val.placeholders) {
+        for (const [name, ph] of Object.entries(val.placeholders)) {
+          msg = msg.replace(new RegExp('\\$' + name + '\\$', 'gi'), ph.content);
+        }
+      }
+      map[key] = msg;
     }
     return map;
   }
@@ -240,13 +246,15 @@ function buildUserscript() {
     const keys = [
       'blockLabel', 'muteLabel', 'blockedStatus', 'mutedStatus',
       'unblockLabel', 'unmuteLabel', 'errorTimeout', 'errorOccurred',
-      'confirmBlockFollowing', 'toastBlocked', 'toastMuted',
     ];
     for (const k of keys) i18n[k] = _i18n(k);
   }
   function msg(key, sub) {
-    const s = i18n[key] || key;
-    return sub != null ? s.replace(/\\$1/g, sub) : s;
+    if (sub != null) {
+      const s = _i18n(key);
+      return s.replace(/\\$1/g, sub);
+    }
+    return i18n[key] || _i18n(key) || key;
   }
 `
   );

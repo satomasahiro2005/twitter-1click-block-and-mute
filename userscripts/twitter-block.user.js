@@ -37,20 +37,22 @@
   }
   // ---- i18n ----
   const _L = navigator.language.startsWith('ja') ? 'ja' : 'en';
-  const _M = {"en":{"extName":"Twitter 1Click Block & Mute","extDescription":"Add one-click block and mute buttons on Twitter","blockLabel":"Block","muteLabel":"Mute","blockedStatus":"Blocked","mutedStatus":"Muted","unblockLabel":"Unblock","unmuteLabel":"Unmute","toastBlocked":"Blocked @$USER$","toastMuted":"Muted @$USER$","toastUnblocked":"Unblocked @$USER$","toastUnmuted":"Unmuted @$USER$","errorTimeout":"Timed out","errorOccurred":"An error occurred","popupDescription":"One-click block & mute from tweets and profiles","settingsLabel":"Settings","sectionButtons":"Button Display","showBlockButton":"Show block button","showMuteButton":"Show mute button","confirmBlockFollowingLabel":"Confirm before blocking followed users","confirmBlockFollowing":"You are following @$USER$. Block anyway?","sectionStats":"Statistics","resetStats":"Reset Statistics","sectionReset":"Reset","resetHint":"Reset all data (statistics, icons, settings) to defaults","fullReset":"Full Reset Extension","confirmReset":"Reset all data (statistics and settings)?","supportLabel":"Support"},"ja":{"extName":"Twitter 1Click Block & Mute","extDescription":"Twitter でワンクリックでブロック・ミュートできるボタンを追加します","blockLabel":"ブロック","muteLabel":"ミュート","blockedStatus":"ブロック済み","mutedStatus":"ミュート済み","unblockLabel":"ブロック解除","unmuteLabel":"ミュート解除","toastBlocked":"@$USER$ をブロックしました","toastMuted":"@$USER$ をミュートしました","toastUnblocked":"@$USER$ のブロックを解除しました","toastUnmuted":"@$USER$ のミュートを解除しました","errorTimeout":"タイムアウトしました","errorOccurred":"エラーが発生しました","popupDescription":"ツイートやプロフィールに表示されるボタンでワンクリックブロック＆ミュート","settingsLabel":"設定","sectionButtons":"ボタン表示","showBlockButton":"ブロックボタンを表示","showMuteButton":"ミュートボタンを表示","confirmBlockFollowingLabel":"フォロー中のユーザーをブロックする前に確認する","confirmBlockFollowing":"@$USER$ はフォロー中です。ブロックしますか？","sectionStats":"統計","resetStats":"統計をリセット","sectionReset":"リセット","resetHint":"統計・アイコン・設定をすべて初期状態に戻します","fullReset":"拡張機能を完全リセット","confirmReset":"すべてのデータ（統計・設定）をリセットしますか？","supportLabel":"サポート"}};
+  const _M = {"en":{"extName":"Twitter 1Click Block & Mute","extDescription":"Add one-click block and mute buttons on Twitter","blockLabel":"Block","muteLabel":"Mute","blockedStatus":"Blocked","mutedStatus":"Muted","unblockLabel":"Unblock","unmuteLabel":"Unmute","toastBlocked":"Blocked @$1","toastMuted":"Muted @$1","toastUnblocked":"Unblocked @$1","toastUnmuted":"Unmuted @$1","errorTimeout":"Timed out","errorOccurred":"An error occurred","popupDescription":"One-click block & mute from tweets and profiles","settingsLabel":"Settings","sectionButtons":"Button Display","showBlockButton":"Show block button","showMuteButton":"Show mute button","confirmBlockFollowingLabel":"Confirm before blocking followed users","confirmBlockFollowing":"You are following @$1. Block anyway?","sectionStats":"Statistics","resetStats":"Reset Statistics","sectionReset":"Reset","resetHint":"Reset all data (statistics, icons, settings) to defaults","fullReset":"Full Reset Extension","confirmReset":"Reset all data (statistics and settings)?","supportLabel":"Support"},"ja":{"extName":"Twitter 1Click Block & Mute","extDescription":"Twitter でワンクリックでブロック・ミュートできるボタンを追加します","blockLabel":"ブロック","muteLabel":"ミュート","blockedStatus":"ブロック済み","mutedStatus":"ミュート済み","unblockLabel":"ブロック解除","unmuteLabel":"ミュート解除","toastBlocked":"@$1 をブロックしました","toastMuted":"@$1 をミュートしました","toastUnblocked":"@$1 のブロックを解除しました","toastUnmuted":"@$1 のミュートを解除しました","errorTimeout":"タイムアウトしました","errorOccurred":"エラーが発生しました","popupDescription":"ツイートやプロフィールに表示されるボタンでワンクリックブロック＆ミュート","settingsLabel":"設定","sectionButtons":"ボタン表示","showBlockButton":"ブロックボタンを表示","showMuteButton":"ミュートボタンを表示","confirmBlockFollowingLabel":"フォロー中のユーザーをブロックする前に確認する","confirmBlockFollowing":"@$1 はフォロー中です。ブロックしますか？","sectionStats":"統計","resetStats":"統計をリセット","sectionReset":"リセット","resetHint":"統計・アイコン・設定をすべて初期状態に戻します","fullReset":"拡張機能を完全リセット","confirmReset":"すべてのデータ（統計・設定）をリセットしますか？","supportLabel":"サポート"}};
   function _i18n(key) { return (_M[_L] || _M.en)[key] || key; }
   const i18n = {};
   function cacheI18n() {
     const keys = [
       'blockLabel', 'muteLabel', 'blockedStatus', 'mutedStatus',
       'unblockLabel', 'unmuteLabel', 'errorTimeout', 'errorOccurred',
-      'confirmBlockFollowing', 'toastBlocked', 'toastMuted',
     ];
     for (const k of keys) i18n[k] = _i18n(k);
   }
   function msg(key, sub) {
-    const s = i18n[key] || key;
-    return sub != null ? s.replace(/\$1/g, sub) : s;
+    if (sub != null) {
+      const s = _i18n(key);
+      return s.replace(/\$1/g, sub);
+    }
+    return i18n[key] || _i18n(key) || key;
   }
   // ---- 設定 ----
   let showBlock = true;
