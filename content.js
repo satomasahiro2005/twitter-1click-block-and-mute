@@ -287,16 +287,34 @@
     'rgb(0, 186, 124)',    // Green
   ]);
   const DEFAULT_ACCENT = 'rgb(29, 155, 240)';
+  let cachedAccentColor = null;
+
+  function loadStoredAccentColor() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get('accentColor', (data) => {
+        if (data.accentColor && ACCENT_COLORS.has(data.accentColor)) {
+          cachedAccentColor = data.accentColor;
+        }
+        resolve();
+      });
+    });
+  }
 
   function getAccentColor() {
     const activeTab = document.querySelector('[role="tab"][aria-selected="true"]');
     if (activeTab) {
       for (const div of activeTab.querySelectorAll('div')) {
         const bg = getComputedStyle(div).backgroundColor;
-        if (ACCENT_COLORS.has(bg)) return bg;
+        if (ACCENT_COLORS.has(bg)) {
+          if (bg !== cachedAccentColor) {
+            cachedAccentColor = bg;
+            chrome.storage.local.set({ accentColor: bg });
+          }
+          return bg;
+        }
       }
     }
-    return DEFAULT_ACCENT;
+    return cachedAccentColor || DEFAULT_ACCENT;
   }
 
   function showToast(message) {
@@ -842,6 +860,7 @@
     injectPageScript();
     await loadStoredIcons();
     await loadSettings();
+    await loadStoredAccentColor();
     setTimeout(processAll, 300);
     observer.observe(document.body, { childList: true, subtree: true });
     setInterval(checkUrlChange, 1000);
