@@ -30,13 +30,12 @@
     const keys = [
       'blockLabel', 'muteLabel', 'blockedStatus', 'mutedStatus',
       'unblockLabel', 'unmuteLabel', 'errorTimeout', 'errorOccurred',
-      'confirmBlockFollowing', 'toastBlocked', 'toastMuted',
     ];
     for (const k of keys) i18n[k] = _msg(k);
   }
   function msg(key, sub) {
-    const s = i18n[key] || key;
-    return sub != null ? s.replace(/\$1/g, sub) : s;
+    if (sub != null) return _msg(key, [sub]);
+    return i18n[key] || _msg(key) || key;
   }
 
   // ---- 設定 ----
@@ -278,6 +277,28 @@
   }
 
   // ---- トースト通知 ----
+  // ---- Twitterアクセントカラー取得 ----
+  const ACCENT_COLORS = new Set([
+    'rgb(29, 155, 240)',   // Blue
+    'rgb(255, 212, 0)',    // Yellow
+    'rgb(249, 24, 128)',   // Pink
+    'rgb(120, 86, 255)',   // Purple
+    'rgb(255, 122, 0)',    // Orange
+    'rgb(0, 186, 124)',    // Green
+  ]);
+  const DEFAULT_ACCENT = 'rgb(29, 155, 240)';
+
+  function getAccentColor() {
+    const activeTab = document.querySelector('[role="tab"][aria-selected="true"]');
+    if (activeTab) {
+      for (const div of activeTab.querySelectorAll('div')) {
+        const bg = getComputedStyle(div).backgroundColor;
+        if (ACCENT_COLORS.has(bg)) return bg;
+      }
+    }
+    return DEFAULT_ACCENT;
+  }
+
   function showToast(message) {
     const existing = document.querySelector('.twblock-toast');
     if (existing) existing.remove();
@@ -285,6 +306,7 @@
     const toast = document.createElement('div');
     toast.className = 'twblock-toast';
     toast.textContent = message;
+    toast.style.backgroundColor = getAccentColor();
     document.body.appendChild(toast);
 
     setTimeout(() => {
