@@ -199,12 +199,205 @@
 
     layersObserver.observe(layers, { childList: true, subtree: true });
   }
-  // ---- ページスクリプト注入（インライン） ----
+  // ---- ページスクリプト注入（@grant none: ページコンテキストで直接実行） ----
   function injectPageScript() {
-    const s = document.createElement('script');
-    s.textContent = "((function () {\n  'use strict';\n\n  let capturedHeaders = null;\n\n  // Twitterのfetchをインターセプトして認証ヘッダーを取得\n  const originalFetch = window.fetch;\n  window.fetch = function (...args) {\n    const [url, options] = args;\n    if (typeof url === 'string' && url.includes('/i/api/')) {\n      if (options && options.headers) {\n        const headers =\n          options.headers instanceof Headers\n            ? Object.fromEntries(options.headers.entries())\n            : options.headers;\n        if (headers['authorization'] && headers['x-csrf-token']) {\n          capturedHeaders = {\n            authorization: headers['authorization'],\n            'x-csrf-token': headers['x-csrf-token'],\n          };\n        }\n      }\n    }\n    return originalFetch.apply(this, args);\n  };\n\n  // フォールバック: XMLHttpRequestもインターセプト\n  const origOpen = XMLHttpRequest.prototype.open;\n  const origSetRequestHeader = XMLHttpRequest.prototype.setRequestHeader;\n  const origSend = XMLHttpRequest.prototype.send;\n\n  XMLHttpRequest.prototype.open = function (method, url, ...rest) {\n    this._twblockUrl = url;\n    this._twblockHeaders = {};\n    return origOpen.call(this, method, url, ...rest);\n  };\n\n  XMLHttpRequest.prototype.setRequestHeader = function (name, value) {\n    if (this._twblockHeaders) {\n      this._twblockHeaders[name.toLowerCase()] = value;\n    }\n    return origSetRequestHeader.call(this, name, value);\n  };\n\n  XMLHttpRequest.prototype.send = function (...args) {\n    if (this._twblockUrl && this._twblockUrl.includes('/i/api/')) {\n      const h = this._twblockHeaders;\n      if (h && h['authorization'] && h['x-csrf-token']) {\n        capturedHeaders = {\n          authorization: h['authorization'],\n          'x-csrf-token': h['x-csrf-token'],\n        };\n      }\n    }\n    return origSend.apply(this, args);\n  };\n\n  // ct0 cookieからCSRFトークンを取得\n  function getCsrfToken() {\n    const match = document.cookie.match(/ct0=([^;]+)/);\n    return match ? match[1] : null;\n  }\n\n  // 公開ベアラートークン（Twitter Web Appに埋め込まれている固定値）\n  const BEARER_TOKEN =\n    'AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs' +\n    '%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA';\n\n  function getHeaders() {\n    if (capturedHeaders) return { ...capturedHeaders };\n    const csrf = getCsrfToken();\n    if (csrf) {\n      return {\n        authorization: 'Bearer ' + decodeURIComponent(BEARER_TOKEN),\n        'x-csrf-token': csrf,\n      };\n    }\n    return null;\n  }\n\n  // ブロック/ミュートAPIを呼び出す\n  async function performAction(action, screenName) {\n    const headers = getHeaders();\n    if (!headers) {\n      return { success: false, error: 'NO_AUTH', message: '認証情報が取得できません。ページを操作してから再試行してください。' };\n    }\n\n    const endpoints = {\n      block: 'https://x.com/i/api/1.1/blocks/create.json',\n      unblock: 'https://x.com/i/api/1.1/blocks/destroy.json',\n      mute: 'https://x.com/i/api/1.1/mutes/users/create.json',\n      unmute: 'https://x.com/i/api/1.1/mutes/users/destroy.json',\n    };\n\n    const url = endpoints[action];\n    if (!url) {\n      return { success: false, error: 'INVALID_ACTION', message: '不明なアクション: ' + action };\n    }\n\n    try {\n      const response = await originalFetch(url, {\n        method: 'POST',\n        headers: {\n          ...headers,\n          'Content-Type': 'application/x-www-form-urlencoded',\n        },\n        credentials: 'include',\n        body: 'screen_name=' + encodeURIComponent(screenName),\n      });\n\n      if (response.ok) {\n        const data = await response.json();\n        return { success: true, data };\n      }\n\n      // 403: CSRFトークン失効 → ct0 cookieから再取得してリトライ\n      if (response.status === 403) {\n        const freshCsrf = getCsrfToken();\n        if (freshCsrf && freshCsrf !== headers['x-csrf-token']) {\n          const retryResponse = await originalFetch(url, {\n            method: 'POST',\n            headers: {\n              ...headers,\n              'x-csrf-token': freshCsrf,\n              'Content-Type': 'application/x-www-form-urlencoded',\n            },\n            credentials: 'include',\n            body: 'screen_name=' + encodeURIComponent(screenName),\n          });\n          if (retryResponse.ok) {\n            capturedHeaders = { ...headers, 'x-csrf-token': freshCsrf };\n            const data = await retryResponse.json();\n            return { success: true, data };\n          }\n        }\n        return { success: false, error: 'FORBIDDEN', message: 'セッションが期限切れです。ページを再読み込みしてください。' };\n      }\n\n      if (response.status === 429) {\n        return { success: false, error: 'RATE_LIMITED', message: 'レート制限に達しました。しばらく待ってから再試行してください。' };\n      }\n\n      return { success: false, error: 'HTTP_' + response.status, message: await response.text() };\n    } catch (err) {\n      return { success: false, error: 'NETWORK', message: err.message };\n    }\n  }\n\n  // フォロー状態を確認するAPI\n  async function checkFollowing(screenName) {\n    const headers = getHeaders();\n    if (!headers) {\n      return { following: false };\n    }\n\n    try {\n      const url = 'https://x.com/i/api/1.1/friendships/show.json?source_screen_name=&target_screen_name=' + encodeURIComponent(screenName);\n      const response = await originalFetch(url, {\n        method: 'GET',\n        headers: { ...headers },\n        credentials: 'include',\n      });\n\n      if (response.ok) {\n        const data = await response.json();\n        return { following: data.relationship?.source?.following === true };\n      }\n      return { following: false };\n    } catch (err) {\n      return { following: false };\n    }\n  }\n\n  // content.jsからのメッセージを受信\n  window.addEventListener('message', async (event) => {\n    if (event.source !== window) return;\n    if (event.data && event.data.type === '__TWBLOCK_ACTION') {\n      const { action, screenName, requestId } = event.data;\n      const result = await performAction(action, screenName);\n      window.postMessage(\n        { type: '__TWBLOCK_RESULT', requestId, ...result },\n        '*'\n      );\n    }\n    if (event.data && event.data.type === '__TWBLOCK_CHECK_FOLLOWING') {\n      const { screenName, requestId } = event.data;\n      const result = await checkFollowing(screenName);\n      window.postMessage(\n        { type: '__TWBLOCK_RESULT', requestId, ...result },\n        '*'\n      );\n    }\n  });\n\n  // 準備完了を通知\n  window.postMessage({ type: '__TWBLOCK_READY' }, '*');\n})();)";
-    (document.head || document.documentElement).appendChild(s);
-    s.remove();
+    (function () {
+  'use strict';
+
+  let capturedHeaders = null;
+
+  // Twitterのfetchをインターセプトして認証ヘッダーを取得
+  const originalFetch = window.fetch;
+  window.fetch = function (...args) {
+    const [url, options] = args;
+    if (typeof url === 'string' && url.includes('/i/api/')) {
+      if (options && options.headers) {
+        const headers =
+          options.headers instanceof Headers
+            ? Object.fromEntries(options.headers.entries())
+            : options.headers;
+        if (headers['authorization'] && headers['x-csrf-token']) {
+          capturedHeaders = {
+            authorization: headers['authorization'],
+            'x-csrf-token': headers['x-csrf-token'],
+          };
+        }
+      }
+    }
+    return originalFetch.apply(this, args);
+  };
+
+  // フォールバック: XMLHttpRequestもインターセプト
+  const origOpen = XMLHttpRequest.prototype.open;
+  const origSetRequestHeader = XMLHttpRequest.prototype.setRequestHeader;
+  const origSend = XMLHttpRequest.prototype.send;
+
+  XMLHttpRequest.prototype.open = function (method, url, ...rest) {
+    this._twblockUrl = url;
+    this._twblockHeaders = {};
+    return origOpen.call(this, method, url, ...rest);
+  };
+
+  XMLHttpRequest.prototype.setRequestHeader = function (name, value) {
+    if (this._twblockHeaders) {
+      this._twblockHeaders[name.toLowerCase()] = value;
+    }
+    return origSetRequestHeader.call(this, name, value);
+  };
+
+  XMLHttpRequest.prototype.send = function (...args) {
+    if (this._twblockUrl && this._twblockUrl.includes('/i/api/')) {
+      const h = this._twblockHeaders;
+      if (h && h['authorization'] && h['x-csrf-token']) {
+        capturedHeaders = {
+          authorization: h['authorization'],
+          'x-csrf-token': h['x-csrf-token'],
+        };
+      }
+    }
+    return origSend.apply(this, args);
+  };
+
+  // ct0 cookieからCSRFトークンを取得
+  function getCsrfToken() {
+    const match = document.cookie.match(/ct0=([^;]+)/);
+    return match ? match[1] : null;
+  }
+
+  // 公開ベアラートークン（Twitter Web Appに埋め込まれている固定値）
+  const BEARER_TOKEN =
+    'AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs' +
+    '%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA';
+
+  function getHeaders() {
+    if (capturedHeaders) return { ...capturedHeaders };
+    const csrf = getCsrfToken();
+    if (csrf) {
+      return {
+        authorization: 'Bearer ' + decodeURIComponent(BEARER_TOKEN),
+        'x-csrf-token': csrf,
+      };
+    }
+    return null;
+  }
+
+  // ブロック/ミュートAPIを呼び出す
+  async function performAction(action, screenName) {
+    const headers = getHeaders();
+    if (!headers) {
+      return { success: false, error: 'NO_AUTH', message: '認証情報が取得できません。ページを操作してから再試行してください。' };
+    }
+
+    const endpoints = {
+      block: 'https://x.com/i/api/1.1/blocks/create.json',
+      unblock: 'https://x.com/i/api/1.1/blocks/destroy.json',
+      mute: 'https://x.com/i/api/1.1/mutes/users/create.json',
+      unmute: 'https://x.com/i/api/1.1/mutes/users/destroy.json',
+    };
+
+    const url = endpoints[action];
+    if (!url) {
+      return { success: false, error: 'INVALID_ACTION', message: '不明なアクション: ' + action };
+    }
+
+    try {
+      const response = await originalFetch(url, {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        credentials: 'include',
+        body: 'screen_name=' + encodeURIComponent(screenName),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return { success: true, data };
+      }
+
+      // 403: CSRFトークン失効 → ct0 cookieから再取得してリトライ
+      if (response.status === 403) {
+        const freshCsrf = getCsrfToken();
+        if (freshCsrf && freshCsrf !== headers['x-csrf-token']) {
+          const retryResponse = await originalFetch(url, {
+            method: 'POST',
+            headers: {
+              ...headers,
+              'x-csrf-token': freshCsrf,
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            credentials: 'include',
+            body: 'screen_name=' + encodeURIComponent(screenName),
+          });
+          if (retryResponse.ok) {
+            capturedHeaders = { ...headers, 'x-csrf-token': freshCsrf };
+            const data = await retryResponse.json();
+            return { success: true, data };
+          }
+        }
+        return { success: false, error: 'FORBIDDEN', message: 'セッションが期限切れです。ページを再読み込みしてください。' };
+      }
+
+      if (response.status === 429) {
+        return { success: false, error: 'RATE_LIMITED', message: 'レート制限に達しました。しばらく待ってから再試行してください。' };
+      }
+
+      return { success: false, error: 'HTTP_' + response.status, message: await response.text() };
+    } catch (err) {
+      return { success: false, error: 'NETWORK', message: err.message };
+    }
+  }
+
+  // フォロー状態を確認するAPI
+  async function checkFollowing(screenName) {
+    const headers = getHeaders();
+    if (!headers) {
+      return { following: false };
+    }
+
+    try {
+      const url = 'https://x.com/i/api/1.1/friendships/show.json?source_screen_name=&target_screen_name=' + encodeURIComponent(screenName);
+      const response = await originalFetch(url, {
+        method: 'GET',
+        headers: { ...headers },
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return { following: data.relationship?.source?.following === true };
+      }
+      return { following: false };
+    } catch (err) {
+      return { following: false };
+    }
+  }
+
+  // content.jsからのメッセージを受信
+  window.addEventListener('message', async (event) => {
+    if (event.source !== window) return;
+    if (event.data && event.data.type === '__TWBLOCK_ACTION') {
+      const { action, screenName, requestId } = event.data;
+      const result = await performAction(action, screenName);
+      window.postMessage(
+        { type: '__TWBLOCK_RESULT', requestId, ...result },
+        '*'
+      );
+    }
+    if (event.data && event.data.type === '__TWBLOCK_CHECK_FOLLOWING') {
+      const { screenName, requestId } = event.data;
+      const result = await checkFollowing(screenName);
+      window.postMessage(
+        { type: '__TWBLOCK_RESULT', requestId, ...result },
+        '*'
+      );
+    }
+  });
+
+  // 準備完了を通知
+  window.postMessage({ type: '__TWBLOCK_READY' }, '*');
+})();
   }
   // ---- メッセージブリッジ ----
   const pending = new Map();

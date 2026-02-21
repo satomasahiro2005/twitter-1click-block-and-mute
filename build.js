@@ -222,12 +222,9 @@ function buildUserscript() {
   transformed = transformed.replace(
     /\s*\/\/ ---- ページスクリプト注入 ----\s*\n\s*function injectPageScript\(\) \{[\s\S]*?\}\s*\n/,
     `
-  // ---- ページスクリプト注入（インライン） ----
+  // ---- ページスクリプト注入（@grant none: ページコンテキストで直接実行） ----
   function injectPageScript() {
-    const s = document.createElement('script');
-    s.textContent = ${JSON.stringify('(' + pageScriptJs.trim() + ')')};
-    (document.head || document.documentElement).appendChild(s);
-    s.remove();
+    ${pageScriptJs.trim()}
   }
 `
   );
