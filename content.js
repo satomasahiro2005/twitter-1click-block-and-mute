@@ -314,7 +314,7 @@
   }
 
   function hideTweet(tweet, screenName, action) {
-    if (tweet.querySelector('.twblock-hidden-bar')) return;
+    if (tweet.querySelector(':scope > .twblock-hidden-bar')) return;
 
     const contentWrapper = tweet.querySelector(':scope > div');
     if (!contentWrapper) return;
@@ -326,6 +326,7 @@
       if (twblockBtn) {
         twblockBtn.classList.remove('twblock-success');
         twblockBtn.innerHTML = getIcon(act);
+        twblockBtn._isActive = false;
       }
     });
 
@@ -348,6 +349,7 @@
       if (twblockBtn) {
         twblockBtn.classList.remove('twblock-success');
         twblockBtn.innerHTML = getIcon(act);
+        twblockBtn._isActive = false;
       }
     });
 
@@ -379,7 +381,7 @@
     btn.title = label + ' @' + screenName;
     btn.innerHTML = getIcon(action);
 
-    let isActive = false;
+    btn._isActive = false;
     const undoAction = action === 'block' ? 'unblock' : 'unmute';
 
     btn.addEventListener('click', async (e) => {
@@ -390,10 +392,10 @@
       btn.disabled = true;
       btn.classList.add('twblock-loading');
 
-      const currentAction = isActive ? undoAction : action;
+      const currentAction = btn._isActive ? undoAction : action;
 
       // フォロー中ユーザーのブロック確認
-      if (confirmBlockFollowing && action === 'block' && !isActive) {
+      if (confirmBlockFollowing && action === 'block' && !btn._isActive) {
         const followResult = await checkFollowing(screenName);
         if (followResult.following) {
           btn.classList.remove('twblock-loading');
@@ -408,8 +410,8 @@
       btn.classList.remove('twblock-loading');
 
       if (result.success) {
-        if (!isActive) {
-          isActive = true;
+        if (!btn._isActive) {
+          btn._isActive = true;
           btn.classList.add('twblock-success');
           btn.innerHTML = CHECK_ICON;
           btn.title = (action === 'block' ? msg('blockedStatus') : msg('mutedStatus')) + ' @' + screenName;
@@ -431,7 +433,7 @@
             }
           }
         } else {
-          isActive = false;
+          btn._isActive = false;
           btn.classList.remove('twblock-success');
           btn.innerHTML = getIcon(action);
           btn.title = label + ' @' + screenName;
