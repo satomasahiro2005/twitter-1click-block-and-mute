@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Twitter 1Click Block & Mute
 // @namespace    twitter-block-userscript
-// @version      1.3.2
+// @version      1.3.3
 // @description  Add one-click block/mute buttons to tweets, profiles, and search suggestions on Twitter/X
 // @author       nemut.ai
 // @match        https://x.com/*
@@ -594,6 +594,7 @@
           if (!buttons) return;
           buttons.classList.add('twblock-tweet');
           buttons.style.marginLeft = 'auto';
+          buttons.style.paddingLeft = '4px';
           if (grokBtn) {
             let grokChild = null;
             for (const child of row.children) {
