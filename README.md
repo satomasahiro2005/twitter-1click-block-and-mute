@@ -25,11 +25,29 @@ Twitter(X)のタイムラインやプロフィールに、ワンクリックで�
 
 ## インストール
 
-1. このリポジトリをクローンまたはダウンロード
-2. Chromeで `chrome://extensions` を開く
-3. 右上の「デベロッパーモード」をオンにする
-4. 「パッケージ化されていない拡張機能を読み込む」をクリック
-5. ダウンロードしたフォルダを選択
+### Chrome (推奨)
+
+[**Chrome ウェブストアからインストール**](https://chromewebstore.google.com/detail/ljfgdpcinehhgcfcjalfidjbhnnjcgdn)
+
+### Firefox
+
+1. [Releases](https://github.com/satomasahiro2005/twitter-1click-block-and-mute/releases)から最新のZIPをダウンロード
+2. `about:debugging#/runtime/this-firefox` を開く
+3. 「一時的なアドオンを読み込む」でZIPファイルを選択
+
+### ユーザースクリプト (Tampermonkey / Violentmonkey)
+
+[**twitter-block.user.js をインストール**](https://raw.githubusercontent.com/satomasahiro2005/twitter-1click-block-and-mute/main/userscripts/twitter-block.user.js)
+
+バージョンが更新されるとTampermonkey/Violentmonkeyが自動で更新通知を出します。
+
+## ビルド
+
+```bash
+node build.js            # ZIP + ユーザースクリプト両方
+node build.js zip        # ZIPのみ
+node build.js userscript # ユーザースクリプトのみ
+```
 
 ## 対応言語
 

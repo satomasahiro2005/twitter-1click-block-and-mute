@@ -315,6 +315,7 @@ function buildUserscript() {
   );
 
   // Build userscript header
+  const REPO_RAW = 'https://raw.githubusercontent.com/satomasahiro2005/twitter-1click-block-and-mute/main';
   const header = `// ==UserScript==
 // @name         Twitter 1Click Block & Mute
 // @namespace    twitter-block-userscript
@@ -323,6 +324,8 @@ function buildUserscript() {
 // @author       nemut.ai
 // @match        https://x.com/*
 // @match        https://twitter.com/*
+// @updateURL    ${REPO_RAW}/userscripts/twitter-block.user.js
+// @downloadURL  ${REPO_RAW}/userscripts/twitter-block.user.js
 // @grant        none
 // @run-at       document-idle
 // ==/UserScript==
