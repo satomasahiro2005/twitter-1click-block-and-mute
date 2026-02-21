@@ -23,8 +23,21 @@
     return action === 'block' ? BLOCK_ICON : MUTE_ICON;
   }
 
-  // ---- i18n ヘルパー ----
-  const msg = chrome.i18n.getMessage.bind(chrome.i18n);
+  // ---- i18n ヘルパー（init時にキャッシュ、処理中はchrome.*不使用） ----
+  const _msg = chrome.i18n.getMessage.bind(chrome.i18n);
+  const i18n = {};
+  function cacheI18n() {
+    const keys = [
+      'blockLabel', 'muteLabel', 'blockedStatus', 'mutedStatus',
+      'unblockLabel', 'unmuteLabel', 'errorTimeout', 'errorOccurred',
+      'confirmBlockFollowing', 'toastBlocked', 'toastMuted',
+    ];
+    for (const k of keys) i18n[k] = _msg(k);
+  }
+  function msg(key, sub) {
+    const s = i18n[key] || key;
+    return sub != null ? s.replace(/\$1/g, sub) : s;
+  }
 
   // ---- 設定 ----
   let showBlock = true;
@@ -510,59 +523,68 @@
     );
 
     tweets.forEach((tweet) => {
-      tweet.setAttribute(PROCESSED, '1');
+      // 内部DOMが未レンダリングならスキップ（次回再試行）
+      if (!tweet.querySelector('[data-testid="User-Name"]') ||
+          !tweet.querySelector('[data-testid="caret"]')) return;
 
-      const rtInfo = extractRetweetInfo(tweet);
+      try {
+        tweet.setAttribute(PROCESSED, '1');
 
-      // RT者のボタンを"reposted"行に挿入
-      if (rtInfo && rtInfo.retweeter !== me && rtInfo.scLinkParent) {
-        const rtButtons = createButtons(rtInfo.retweeter, tweet);
-        if (rtButtons) {
-          rtButtons.classList.add('twblock-tweet');
-          rtButtons.classList.add('twblock-repost');
-          rtInfo.scLinkParent.classList.add('twblock-repost-row');
-          rtInfo.scLinkParent.appendChild(rtButtons);
+        const rtInfo = extractRetweetInfo(tweet);
+
+        // RT者のボタンを"reposted"行に挿入
+        if (rtInfo && rtInfo.retweeter !== me && rtInfo.scLinkParent) {
+          const rtButtons = createButtons(rtInfo.retweeter, tweet);
+          if (rtButtons) {
+            rtButtons.classList.add('twblock-tweet');
+            rtButtons.classList.add('twblock-repost');
+            rtInfo.scLinkParent.classList.add('twblock-repost-row');
+            rtInfo.scLinkParent.appendChild(rtButtons);
+          }
         }
-      }
 
-      // 元投稿者のボタンをgrok/caret行に挿入
-      const authorName = rtInfo ? extractAuthorScreenName(tweet) : extractScreenName(tweet);
-      if (!authorName || authorName === me) {
+        // 元投稿者のボタンをgrok/caret行に挿入
+        const authorName = rtInfo ? extractAuthorScreenName(tweet) : extractScreenName(tweet);
+        if (!authorName || authorName === me) {
+          processQuotedTweet(tweet, me);
+          return;
+        }
+
+        const grokInfo = findGrokRow(tweet);
+        if (grokInfo) {
+          const { row, grokBtn } = grokInfo;
+          const buttons = createButtons(authorName, tweet);
+          if (!buttons) return;
+          buttons.classList.add('twblock-tweet');
+          buttons.style.marginLeft = 'auto';
+          if (grokBtn) {
+            let grokChild = null;
+            for (const child of row.children) {
+              if (child.contains(grokBtn)) { grokChild = child; break; }
+            }
+            if (grokChild) {
+              row.insertBefore(buttons, grokChild);
+            } else {
+              row.insertBefore(buttons, row.firstChild);
+            }
+          } else {
+            // caretを含む子要素の直前に挿入（⋯の左側に配置）
+            let caretChild = null;
+            for (const child of row.children) {
+              if (child.contains(grokInfo.caret)) { caretChild = child; break; }
+            }
+            if (caretChild) {
+              row.insertBefore(buttons, caretChild);
+            } else {
+              row.appendChild(buttons);
+            }
+          }
+        }
+
         processQuotedTweet(tweet, me);
-        return;
+      } catch (e) {
+        tweet.removeAttribute(PROCESSED);
       }
-
-      const grokInfo = findGrokRow(tweet);
-      if (grokInfo) {
-        const { row, grokBtn } = grokInfo;
-        const buttons = createButtons(authorName, tweet);
-        if (!buttons) return;
-        buttons.classList.add('twblock-tweet');
-        if (grokBtn) {
-          let grokChild = null;
-          for (const child of row.children) {
-            if (child.contains(grokBtn)) { grokChild = child; break; }
-          }
-          if (grokChild) {
-            row.insertBefore(buttons, grokChild);
-          } else {
-            row.insertBefore(buttons, row.firstChild);
-          }
-        } else {
-          // caretを含む子要素の直前に挿入（⋯の左側に配置）
-          let caretChild = null;
-          for (const child of row.children) {
-            if (child.contains(grokInfo.caret)) { caretChild = child; break; }
-          }
-          if (caretChild) {
-            row.insertBefore(buttons, caretChild);
-          } else {
-            row.appendChild(buttons);
-          }
-        }
-      }
-
-      processQuotedTweet(tweet, me);
     });
   }
 
@@ -749,10 +771,20 @@
     processTypeahead();
   }
 
-  let debounceTimer = null;
+  let rafScheduled = false;
+  let trailingTimer = null;
   const observer = new MutationObserver(() => {
-    if (debounceTimer) clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(processAll, 200);
+    // 次の描画フレームで即処理（ツイートと同フレームにボタン表示）
+    if (!rafScheduled) {
+      rafScheduled = true;
+      requestAnimationFrame(() => {
+        rafScheduled = false;
+        processAll();
+      });
+    }
+    // rAF時点で未完成だった要素を拾うフォールバック
+    if (trailingTimer) clearTimeout(trailingTimer);
+    trailingTimer = setTimeout(processAll, 200);
   });
 
   let lastUrl = location.href;
@@ -783,10 +815,11 @@
 
   // ---- 初期化 ----
   async function init() {
+    cacheI18n();
     injectPageScript();
     await loadStoredIcons();
     await loadSettings();
-    setTimeout(processAll, 1000);
+    setTimeout(processAll, 300);
     observer.observe(document.body, { childList: true, subtree: true });
     setInterval(checkUrlChange, 1000);
     observeLayers();
