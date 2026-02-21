@@ -299,6 +299,27 @@ function buildUserscript() {
     "localStorage.setItem('twblock_icons', JSON.stringify({ block: BLOCK_ICON, mute: MUTE_ICON }));"
   );
 
+  // Replace chrome.storage.local.get('accentColor', ...) with localStorage
+  transformed = transformed.replace(
+    /function loadStoredAccentColor\(\) \{[\s\S]*?return new Promise[\s\S]*?\}\);\s*\}\)/,
+    `function loadStoredAccentColor() {
+    return new Promise((resolve) => {
+      try {
+        const stored = localStorage.getItem('twblock_accentColor');
+        if (stored && ACCENT_COLORS.has(stored)) {
+          cachedAccentColor = stored;
+        }
+      } catch {}
+      resolve();
+    })`
+  );
+
+  // Replace chrome.storage.local.set for accentColor
+  transformed = transformed.replace(
+    /chrome\.storage\.local\.set\(\{ accentColor: bg \}\);/g,
+    "localStorage.setItem('twblock_accentColor', bg);"
+  );
+
   // Inject CSS function
   const cssInjector = `
   // ---- CSS注入 ----
