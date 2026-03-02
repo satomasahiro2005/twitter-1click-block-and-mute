@@ -3,7 +3,7 @@
     "message": "Ultimate Twitter Block"
   },
   "extDescription": {
-    "message": "Twitter でワンクリックでブロック・ミュートできるボタンを追加します"
+    "message": "Twitter/Xのタイムラインにワンクリックのブロック＆ミュートボタンを追加。ツイート・RT・引用RT・プロフィールに対応。"
   },
 
   "blockLabel": { "message": "ブロック" },
