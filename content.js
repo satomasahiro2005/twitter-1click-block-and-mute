@@ -43,6 +43,38 @@
   let showMute = true;
   let confirmBlockFollowing = false;
 
+  // ---- ブロック/ミュート済みユーザーの永続化 ----
+  const blockedUsers = new Map(); // screenName → 'block' | 'mute'
+
+  function loadBlockedUsers() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get('blockedUsers', (data) => {
+        if (data.blockedUsers) {
+          for (const [k, v] of Object.entries(data.blockedUsers)) {
+            blockedUsers.set(k, v);
+          }
+        }
+        resolve();
+      });
+    });
+  }
+
+  function saveBlockedUsers() {
+    chrome.storage.local.set({ blockedUsers: Object.fromEntries(blockedUsers) });
+  }
+
+  function addBlockedUser(screenName, action) {
+    blockedUsers.set(screenName, action);
+    saveBlockedUsers();
+  }
+
+  function removeBlockedUser(screenName, action) {
+    if (blockedUsers.get(screenName) === action) {
+      blockedUsers.delete(screenName);
+      saveBlockedUsers();
+    }
+  }
+
   // ---- アイコン更新（ストレージ or パッシブ監視） ----
   let iconsExtracted = false;
 
@@ -354,6 +386,7 @@
 
       const result = await sendAction(undoAction, screenName);
       if (result.success) {
+        removeBlockedUser(screenName, action);
         onUndo(action);
         bar.remove();
         showToast(msg(undoToastKey, screenName));
@@ -469,6 +502,7 @@
           btn.innerHTML = CHECK_ICON;
           btn.title = (action === 'block' ? msg('blockedStatus') : msg('mutedStatus')) + ' @' + screenName;
           btn.disabled = false;
+          addBlockedUser(screenName, action);
           chrome.runtime.sendMessage({ type: 'ACTION_COMPLETED', action }).catch(() => {});
           showToast(msg(action === 'block' ? 'toastBlocked' : 'toastMuted', screenName));
 
@@ -487,6 +521,7 @@
           btn.classList.remove('twblock-success');
           btn.innerHTML = getIcon(action);
           btn.title = label + ' @' + screenName;
+          removeBlockedUser(screenName, action);
           btn.disabled = false;
         }
       } else {
@@ -622,6 +657,18 @@
           }
         }
 
+        // ブロック/ミュート済みユーザーのツイートを自動非表示
+        const blockedAction = blockedUsers.get(authorName);
+        if (blockedAction) {
+          const activeBtn = tweet.querySelector('.twblock-' + blockedAction + ':not(.twblock-success)');
+          if (activeBtn) {
+            activeBtn._isActive = true;
+            activeBtn.classList.add('twblock-success');
+            activeBtn.innerHTML = CHECK_ICON;
+          }
+          hideTweet(tweet, authorName, blockedAction);
+        }
+
         processQuotedTweet(tweet, me);
       } catch (e) {
         tweet.removeAttribute(PROCESSED);
@@ -680,6 +727,18 @@
       buttons.style.marginLeft = 'auto';
       buttons.style.paddingLeft = '8px';
       targetRow.appendChild(buttons);
+
+      // ブロック/ミュート済みユーザーの引用ツイートを自動非表示
+      const blockedAction = blockedUsers.get(qtScreenName);
+      if (blockedAction) {
+        const activeBtn = buttons.querySelector('.twblock-' + blockedAction + ':not(.twblock-success)');
+        if (activeBtn) {
+          activeBtn._isActive = true;
+          activeBtn.classList.add('twblock-success');
+          activeBtn.innerHTML = CHECK_ICON;
+        }
+        hideQuotedTweet(block, qtScreenName, blockedAction);
+      }
     });
   }
 
@@ -857,6 +916,7 @@
     await loadStoredIcons();
     await loadSettings();
     await loadStoredAccentColor();
+    await loadBlockedUsers();
     setTimeout(processAll, 300);
     observer.observe(document.body, { childList: true, subtree: true });
     setInterval(checkUrlChange, 1000);
