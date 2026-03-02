@@ -102,6 +102,7 @@
 .twblock-btn-container.twblock-profile {
   gap: 8px;
   align-self: flex-start;
+  margin-right: 8px;
 }
 
 .twblock-btn-container.twblock-profile .twblock-btn {
@@ -136,7 +137,7 @@
 
 /* サイドバー / フォロー一覧: 32px丸ボタン */
 .twblock-btn-container.twblock-sidebar {
-  gap: 4px;
+  gap: 0;
   flex-shrink: 0;
 }
 
